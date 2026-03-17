@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Thời Gian - Võ Phước Bằng</title>
+    <style>
+        /* ==========================================================================
+           1. THIẾT LẬP BIẾN CSS & RESET CƠ BẢN
+           ========================================================================== */
+        :root {
+            /* Bảng màu chủ đạo */
+            --bg-color: #f4f7f6;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --primary-color: #0d47a1; /* Xanh ngọc đậm */
+            --secondary-color: #1976d2;
+            --accent-color: #ff3d00;
+            
+            /* Màu sắc cho Thời Khóa Biểu */
+            --class-study-bg: #e3f2fd;
+            --class-study-border: #64b5f6;
+            --class-study-text: #0d47a1;
+            
+            --class-teach-bg: #fff3e0;
+            --class-teach-border: #ffb74d;
+            --class-teach-text: #e65100;
+            
+            --class-overlap-bg: #ffebee;
+            --class-overlap-border: #e57373;
+            --class-overlap-text: #b71c1c;
+
+            /* Glassmorphism settings */
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            
+            /* Kích thước */
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            
+            /* Typography */
+            --font-family: 'Times New Roman', Times, serif; /* Theo yêu cầu người dùng */
+        }
+
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-main: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --glass-bg: rgba(30, 30, 30, 0.85);
+            --glass-border: rgba(80, 80, 80, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --primary-color: #64b5f6;
+            
+            --class-study-bg: #0d47a1;
+            --class-study-border: #1976d2;
+            --class-study-text: #e3f2fd;
+            
+            --class-teach-bg: #e65100;
+            --class-teach-border: #ef6c00;
+            --class-teach-text: #fff3e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: var(--spacing-lg);
+            transition: background-color 0.3s, color 0.3s;
+            background-image: radial-gradient(circle at 10% 20%, rgba(25, 118, 210, 0.05) 0%, transparent 20%), 
+                              radial-gradient(circle at 90% 80%, rgba(255, 61, 0, 0.05) 0%, transparent 20%);
+        }
+
+        /* ==========================================================================
+           2. BỐ CỤC CHÍNH (CSS GRID)
+           ========================================================================== */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: auto 1fr;
+            gap: var(--spacing-lg);
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 48px);
+        }
+
+        .header-section {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .main-schedule {
+            grid-column: 1 / 2;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            grid-column: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+            overflow-y: auto;
+            padding-right: 5px; /* Cho scrollbar */
+        }
+
+        /* ==========================================================================
+           3. STYLES CHO HEADER
+           ========================================================================== */
+        .profile-info h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .profile-info p {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-family: var(--font-family);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: #fff;
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* ==========================================================================
+           4. STYLES CHO THỜI KHÓA BIỂU
+           ========================================================================== */
+        .schedule-header {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .legend {
+            display: flex;
+            gap: var(--spacing-md);
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .color-study { background: var(--class-study-bg); border: 1px solid var(--class-study-border); }
+        .color-teach { background: var(--class-teach-bg); border: 1px solid var(--class-teach-border); }
+
+        .schedule-grid-container {
+            flex: 1;
+            overflow: auto;
+            padding: var(--spacing-md);
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
+            table-layout: fixed;
+            min-width: 900px;
+        }
+
+        .timetable th, .timetable td {
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            vertical-align: top;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .timetable th {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            font-size: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .time-col {
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+            background: rgba(0,0,0,0.05) !important;
+            vertical-align: middle !important;
+        }
+
+        .class-card {
+            padding: 8px;
+            border-radius: var(--radius-md);
+            margin-bottom: 6px;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .class-card:hover {
+            transform: scale(1.02);
+            z-index: 5;
+        }
+
+        .class-card.study {
+            background-color: var(--class-study-bg);
+            border-left: 4px solid var(--class-study-border);
+            color: var(--class-study-text);
+        }
+
+        .class-card.teach {
+            background-color: var(--class-teach-bg);
+            border-left: 4px solid var(--class-teach-border);
+            color: var(--class-teach-text);
+        }
+
+        .class-card.overlap {
+            background-color: var(--class-overlap-bg);
+            border-left: 4px solid var(--class-overlap-border);
+            color: var(--class-overlap-text);
+            animation: pulse 2s infinite;
+        }
+
+        .class-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .class-detail {
+            display: flex;
+            justify-content: space-between;
+            opacity: 0.9;
+            font-size: 12px;
+        }
+
+        .class-room { font-weight: bold; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(229, 115, 115, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(229, 115, 115, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(229, 115, 115, 0); }
+        }
+
+        /* ==========================================================================
+           5. STYLES CHO SIDEBAR COMPONENTS (Pomodoro, Todo, Notes)
+           ========================================================================== */
+        .widget {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .widget-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Pomodoro Timer --- */
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: var(--spacing-md) 0;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .timer-modes {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.05);
+            padding: 4px;
+            border-radius: var(--radius-md);
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-family: var(--font-family);
+        }
+
+        .mode-btn.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+
+        /* --- To-Do List --- */
+        .todo-input-group {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .todo-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: var(--radius-md);
+            font-family: var(--font-family);
+            background: transparent;
+            color: var(--text-main);
+        }
+
+        .todo-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        .todo-item:hover {
+            background: rgba(0,0,0,0.02);
+        }
+
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .todo-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .todo-item span {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .delete-btn {
+            color: #ff5252;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: bold;
+            padding: 4px;
+        }
+
+        /* --- Notes Area --- */
+        .notes-textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: var(--radius-md);
+            resize: vertical;
+            font-family: var(--font-family);
+            background: transparent;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bdbdbd;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .main-schedule {
+                min-height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <header class="header-section">
+            <div class="profile-info">
+                <h1>Võ Phước Bằng</h1>
+                <p>Lớp: 49K17.1 | Chuyên ngành: Quản trị nguồn nhân lực | Học kỳ 2 (2025-2026)</p>
+            </div>
+            <div class="header-controls">
+                <span id="current-datetime" style="font-weight:bold; margin-right: 15px;"></span>
+                <button class="btn btn-outline" id="theme-toggle" onclick="toggleTheme()">🌙 Giao diện Tối</button>
+                <button class="btn btn-primary" onclick="window.print()">🖨️ In TKB</button>
+            </div>
+        </header>
+
+        <main class="main-schedule">
+            <div class="schedule-header">
+                <h2>Thời Khóa Biểu Tổng Hợp</h2>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color color-study"></div> Học tại DUE</div>
+                    <div class="legend-item"><div class="legend-color color-teach"></div> Dạy tiếng Anh</div>
+                    <div class="legend-item"><div class="legend-color" style="background:var(--class-overlap-bg); border:1px solid var(--class-overlap-border)"></div> Trùng/Sát giờ</div>
+                </div>
+            </div>
+            <div class="schedule-grid-container">
+                <table class="timetable" id="timetable">
+                    <thead>
+                        <tr>
+                            <th class="time-col">Buổi / Tiết</th>
+                            <th>Thứ 2</th>
+                            <th>Thứ 3</th>
+                            <th>Thứ 4</th>
+                            <th>Thứ 5</th>
+                            <th>Thứ 6</th>
+                            <th>Thứ 7</th>
+                            <th>Chủ nhật</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetable-body">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+
+        <aside class="sidebar">
+            
+            <div class="widget">
+                <div class="widget-title">
+                    <span>⏱️ Đồng Hồ Học Tập</span>
+                </div>
+                <div class="timer-modes">
+                    <button class="mode-btn active" onclick="setTimerMode('pomodoro')">Pomodoro (25')</button>
+                    <button class="mode-btn" onclick="setTimerMode('shortBreak')">Nghỉ ngắn (5')</button>
+                    <button class="mode-btn" onclick="setTimerMode('longBreak')">Nghỉ dài (15')</button>
+                </div>
+                <div class="timer-display" id="timer-display">25:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-primary" id="timer-start" onclick="startTimer()">Bắt đầu</button>
+                    <button class="btn btn-outline" id="timer-pause" onclick="pauseTimer()">Tạm dừng</button>
+                    <button class="btn btn-outline" onclick="resetTimer()">Đặt lại</button>
+                </div>
+            </div>
+
+            <div class="widget">
+                <div class="widget-title">
+                    <span>✅ Checklist Công Việc</span>
+                    <span style="font-size:12px; cursor:pointer;" onclick="clearCompletedTodos()">Xóa mục đã xong</span>
+                </div>
+                <div class="todo-input-group">
+                    <input type="text" id="todo-input" class="todo-input" placeholder="Nhập công việc mới (Vd: Soạn giáo án lớp Heri)..." onkeypress="handleTodoKeyPress(event)">
+                    <button class="btn btn-primary" onclick="addTodo()">Thêm</button>
+                </div>
+                <ul class="todo-list" id="todo-list">
+                    </ul>
+            </div>
+
+            <div class="widget" style="flex: 1;">
+                <div class="widget-title">
+                    <span>📝 Ghi Chú Nhanh</span>
+                    <button class="btn btn-outline" style="padding: 2px 8px; font-size:12px;" onclick="saveNotes()">Lưu</button>
+                </div>
+                <textarea id="notes-area" class="notes-textarea" placeholder="Ghi chú ý tưởng tiểu luận, bài tập nhóm, thông tin phụ huynh..."></textarea>
+                <div id="note-status" style="font-size:12px; color:green; text-align:right; margin-top:5px; height:18px;"></div>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <script>
+        /**
+         * DỮ LIỆU THỜI KHÓA BIỂU
+         * Phân tích từ 2 hình ảnh cung cấp.
+         * Type: 'study' (DUE) hoặc 'teach' (Inspire)
+         */
+        const scheduleData = [
+            // --- THỨ 2 ---
+            { day: 2, shift: 'morning', start: 1, end: 3, timeStr: '07h00-09h25', title: 'Phát triển kỹ năng quản trị', room: 'A313', type: 'study', week: '22-36' },
+            
+            // --- THỨ 3 ---
+            { day: 3, shift: 'afternoon', start: 7, end: 9, timeStr: '13h00-15h25', title: 'Quản trị chiến lược', room: 'A206', type: 'study', week: '22-36' },
+            { day: 3, shift: 'evening', start: 'teach1', end: 'teach1', timeStr: '18h30-20h00', title: 'Dạy Tiếng Anh', room: 'Inspire', type: 'teach', note: 'Từ 6h30 tới 8h tối' },
+            
+            // --- THỨ 4 ---
+            { day: 4, shift: 'afternoon', start: 7, end: 9, timeStr: '13h00-15h25', title: 'Thù lao', room: 'C205', type: 'study', week: '22-36' },
+            { day: 4, shift: 'late_afternoon', start: 10, end: 12, timeStr: '15h35-18h00', title: 'Luật lao động', room: 'A202', type: 'study', week: '22-36' },
+            
+            // --- THỨ 5 ---
+            { day: 5, shift: 'morning', start: 1, end: 3, timeStr: '07h00-09h25', title: 'Tuyển dụng', room: 'G205', type: 'study', week: '22-36' },
+            { day: 5, shift: 'evening', start: 'teach1', end: 'teach1', timeStr: '18h30-20h00', title: 'Dạy Tiếng Anh', room: 'Inspire', type: 'teach', note: 'Từ 6h30 tới 8h tối' },
+            
+            // --- THỨ 6 ---
+            { day: 6, shift: 'morning', start: 1, end: 3, timeStr: '07h00-09h25', title: 'Thù lao', room: 'C205', type: 'study', week: '22-24' },
+            // Cảnh báo trùng lặp thứ 6: Dạy 16h-17h30 và Học Tiết 10-12 (15h35-18h00)
+            { day: 6, shift: 'late_afternoon', start: 'teach_t6', end: 'teach_t6', timeStr: '16h00-17h30', title: 'Dạy Tiếng Anh', room: 'Inspire', type: 'teach', note: 'Từ 4h tới 5h30 chiều. CHÚ Ý TRÙNG LỊCH HỌC DUE', overlap: true },
+            { day: 6, shift: 'late_afternoon', start: 10, end: 12, timeStr: '15h35-18h00', title: 'Phát triển KNQT (Tuần 22-24)', room: 'A313', type: 'study', week: '22-24', overlap: true },
+            { day: 6, shift: 'late_afternoon', start: 10, end: 12, timeStr: '15h35-18h00', title: 'Quản trị chiến lược (Tuần 31-33)', room: 'A206', type: 'study', week: '31-33' },
+            
+            // --- THỨ 7 ---
+            { day: 7, shift: 'morning', start: 1, end: 3, timeStr: '07h00-09h25', title: 'Luật lao động', room: 'A202', type: 'study', week: '25-27' },
+            { day: 7, shift: 'afternoon', start: 7, end: 9, timeStr: '13h00-15h25', title: 'Phương pháp NCKH', room: 'C204', type: 'study', week: '22-36' },
+            // Cảnh báo sát giờ/trùng giờ thứ 7: Tiết 10-12 (15h35-18h00) và Dạy (17h00-20h00)
+            { day: 7, shift: 'late_afternoon', start: 10, end: 12, timeStr: '15h35-18h00', title: 'Tuyển dụng', room: 'G205', type: 'study', week: '25-27', overlap: true },
+            { day: 7, shift: 'evening', start: 'teach_t7', end: 'teach_t7', timeStr: '17h00-20h00', title: 'Dạy Tiếng Anh (2 Lớp)', room: 'Inspire', type: 'teach', note: 'Từ 5h tới 8h tối. TRÙNG TIẾT 10-12', overlap: true },
+            
+            // Môn Đề án thiết kế chính sách NNL không có giờ cụ thể, sinh viên tự sắp xếp nhóm
+        ];
+
+        // Khung thời gian tiêu chuẩn
+        const timeSlots = [
+            { id: 'morning', label: 'Sáng', times: 'Tiết 1-6<br>(07h00 - 12h00)' },
+            { id: 'afternoon', label: 'Chiều', times: 'Tiết 7-9<br>(13h00 - 15h25)' },
+            { id: 'late_afternoon', label: 'Chiều Muộn', times: 'Tiết 10-12<br>(15h35 - 18h00)' },
+            { id: 'evening', label: 'Tối', times: 'Ca Tối<br>(18h00 - 21h00)' }
+        ];
+
+        /**
+         * HÀM RENDER THỜI KHÓA BIỂU DYNAMIC
+         */
+        function renderTimetable() {
+            const tbody = document.getElementById('timetable-body');
+            tbody.innerHTML = '';
+
+            timeSlots.forEach(slot => {
+                const tr = document.createElement('tr');
+                
+                // Cột tiêu đề thời gian
+                const th = document.createElement('td');
+                th.className = 'time-col';
+                th.innerHTML = `${slot.label}<br><span style="font-size:11px;font-weight:normal">${slot.times}</span>`;
+                tr.appendChild(th);
+
+                // Các cột từ Thứ 2 đến Chủ nhật (ngày 2 đến 8)
+                for (let day = 2; day <= 8; day++) {
+                    const td = document.createElement('td');
+                    
+                    // Lọc các lớp học/dạy vào ngày này và ca này
+                    const classes = scheduleData.filter(item => item.day === day && item.shift === slot.id);
+                    
+                    classes.forEach(cls => {
+                        const card = document.createElement('div');
+                        card.className = `class-card ${cls.type} ${cls.overlap ? 'overlap' : ''}`;
+                        card.title = cls.note ? cls.note : `Tuần: ${cls.week}`;
+                        
+                        card.innerHTML = `
+                            <div class="class-title">${cls.title}</div>
+                            <div class="class-detail">
+                                <span>🕒 ${cls.timeStr}</span>
+                            </div>
+                            <div class="class-detail" style="margin-top:4px;">
+                                <span class="class-room">📍 ${cls.room}</span>
+                                ${cls.week ? `<span>Tuần: ${cls.week}</span>` : ''}
+                            </div>
+                            ${cls.overlap ? '<div style="color:#b71c1c; font-size:11px; margin-top:4px; font-weight:bold;">⚠️ Chú ý trùng lịch</div>' : ''}
+                        `;
+                        td.appendChild(card);
+                    });
+
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        /**
+         * LOGIC ĐỒNG HỒ POMODORO CỰC KỲ CHI TIẾT
+         */
+        let timerInterval;
+        let timeLeft = 25 * 60; // Default 25 phút
+        let isRunning = false;
+        let currentMode = 'pomodoro'; // pomodoro, shortBreak, longBreak
+
+        const modes = {
+            pomodoro: 25 * 60,
+            shortBreak: 5 * 60,
+            longBreak: 15 * 60
+        };
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+            document.title = `${m}:${s} - TKB Võ Phước Bằng`; // Update tab title
+        }
+
+        function setTimerMode(mode) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            currentMode = mode;
+            timeLeft = modes[mode];
+            
+            // UI Update
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('timer-start').innerText = "Bắt đầu";
+            
+            updateTimerDisplay();
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('timer-start').innerText = "Đang chạy...";
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    alert("⏰ Hết giờ! Thời gian cho chế độ tiếp theo.");
+                    // Xử lý báo thức bằng âm thanh (Optional)
+                    let audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+                    audio.play();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('timer-start').innerText = "Tiếp tục";
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = modes[currentMode];
+            document.getElementById('timer-start').innerText = "Bắt đầu";
+            updateTimerDisplay();
+        }
+
+        /**
+         * LOGIC TODO LIST (Sử dụng LocalStorage để lưu dữ liệu)
+         */
+        let todos = JSON.parse(localStorage.getItem('bang_todos')) || [
+            { id: 1, text: 'Thiết kế hệ thống C&B cho Đề án NNL', completed: false },
+            { id: 2, text: 'Soạn Worksheet Unit 8 cho lớp Nancy', completed: false },
+            { id: 3, text: 'Chạy phân tích hồi quy SPSS', completed: false }
+        ];
+
+        function renderTodos() {
+            const list = document.getElementById('todo-list');
+            list.innerHTML = '';
+            todos.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${todo.id})">
+                    <span>${todo.text}</span>
+                    <button class="delete-btn" onclick="deleteTodo(${todo.id})">×</button>
+                `;
+                list.appendChild(li);
+            });
+            localStorage.setItem('bang_todos', JSON.stringify(todos));
+        }
+
+        function handleTodoKeyPress(e) {
+            if (e.key === 'Enter') addTodo();
+        }
+
+        function addTodo() {
+            const input = document.getElementById('todo-input');
+            const text = input.value.trim();
+            if (text) {
+                todos.push({ id: Date.now(), text, completed: false });
+                input.value = '';
+                renderTodos();
+            }
+        }
+
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                renderTodos();
+            }
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            renderTodos();
+        }
+
+        function clearCompletedTodos() {
+            todos = todos.filter(t => !t.completed);
+            renderTodos();
+        }
+
+        /**
+         * LOGIC NOTES (LocalStorage)
+         */
+        function initNotes() {
+            const notesArea = document.getElementById('notes-area');
+            const savedNotes = localStorage.getItem('bang_notes');
+            if (savedNotes) {
+                notesArea.value = savedNotes;
+            }
+            
+            // Auto save every 10 seconds
+            setInterval(saveNotesAuto, 10000);
+        }
+
+        function saveNotes() {
+            const notes = document.getElementById('notes-area').value;
+            localStorage.setItem('bang_notes', notes);
+            const status = document.getElementById('note-status');
+            status.innerText = "Đã lưu thủ công!";
+            setTimeout(() => status.innerText = "", 2000);
+        }
+        
+        function saveNotesAuto() {
+            const notes = document.getElementById('notes-area').value;
+            if(localStorage.getItem('bang_notes') !== notes) {
+                localStorage.setItem('bang_notes', notes);
+                const status = document.getElementById('note-status');
+                status.innerText = "Đã tự động lưu...";
+                setTimeout(() => status.innerText = "", 2000);
+            }
+        }
+
+        /**
+         * LOGIC NGÀY GIỜ HIỆN TẠI VÀ DARK MODE
+         */
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' };
+            document.getElementById('current-datetime').innerText = now.toLocaleDateString('vi-VN', options);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('bang_theme', 'light');
+                document.getElementById('theme-toggle').innerText = "🌙 Giao diện Tối";
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('bang_theme', 'dark');
+                document.getElementById('theme-toggle').innerText = "☀️ Giao diện Sáng";
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('bang_theme');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                document.getElementById('theme-toggle').innerText = "☀️ Giao diện Sáng";
+            }
+        }
+
+        // ==========================================
+        // KHỞI TẠO TẤT CẢ KHI LOAD TRANG
+        // ==========================================
+        window.onload = function() {
+            renderTimetable();
+            updateTimerDisplay();
+            renderTodos();
+            initNotes();
+            initTheme();
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Cập nhật giờ mỗi phút
+            
+            // Hiển thị thông báo nhắc nhở về các môn học tự sắp xếp
+            console.log("Hệ thống đã sẵn sàng. Ghi chú: Môn 'Đề án thiết kế chính sách NNL' và 'PP Nghiên cứu Khoa học' (tự học/làm việc nhóm) bạn cần tự chủ động sắp xếp thời gian nhé.");
+        };
+
+    </script>
+</body>
+</html>
